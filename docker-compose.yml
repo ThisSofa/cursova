@@ -10,7 +10,7 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
-    network:
+    networks:
       - inventory_net
 
   api:
@@ -18,10 +18,12 @@ services:
     container_name: backend
     restart: always
     ports:
-      - "${API_PORT}:5050"
+      - "${API_PORT}:8000"
     environment:
       DATABASE_URL: ${DATABASE_URL}
-    network:
+    depends_on:
+      - db
+    networks:
       - inventory_net
 
   web:
@@ -32,12 +34,14 @@ services:
       - "${WEB_PORT}:80"
     environment:
       API_BASE_URL: ${API_BASE_URL}
-    network:
+    depends_on:
+      - api
+    networks:
       - inventory_net
 
 volumes:
   db_data:
 
 networks:
-  inventory_net
-    driver:bridge
+  inventory_net:
+    driver: bridge

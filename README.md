@@ -52,6 +52,8 @@ CREATE TABLE items (
 
 ## Структура проєкту
 - docker-compose.yml: опис контейнерів та мережі.
+- .env: локальні змінні середовища для контейнерів (порти, доступ до БД, URL API).
+- .env.example: шаблон змінних середовища.
 - backend/main.py: модель, підключення до БД, API-ендпоїнти.
 - backend/requirements.txt: залежності Python.
 - backend/Dockerfile: збірка контейнера API.
@@ -90,8 +92,9 @@ CREATE TABLE items (
 
 Кроки:
 1. Перейти до каталогу проєкту.
-2. Виконати: docker compose up --build -d
-3. Відкрити у браузері: http://localhost:8080
+2. Налаштувати значення у файлі .env (паролі БД, порти, URL).
+3. Виконати: docker compose up --build -d
+4. Відкрити у браузері: http://localhost:8080
 
 ## Перевірка сценаріїв
 1. Створіть кілька записів у вкладці Створення запису.
