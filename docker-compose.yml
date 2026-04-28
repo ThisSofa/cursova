@@ -3,33 +3,35 @@ version: '3.8'
 services:
   db:
     image: mysql:8.0
-    container_name: inventory_db
+    container_name: ${DB_CONTAINER_NAME:-inventory_db}
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root_password
-      MYSQL_DATABASE: inventory
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
 
   api:
     build: ./backend
-    container_name: inventory_api
+    container_name: ${API_CONTAINER_NAME:-inventory_api}
     restart: always
     ports:
-      - "8000:8000"
+      - "${API_PORT:-8000}:8000"
     environment:
-      DATABASE_URL: mysql+pymysql://user:password@db:3306/inventory
+      DATABASE_URL: ${DATABASE_URL}
     depends_on:
       - db
 
   web:
     build: ./frontend
-    container_name: inventory_web
+    container_name: ${WEB_CONTAINER_NAME:-inventory_web}
     restart: always
     ports:
-      - "8080:80"
+      - "${WEB_PORT:-8080}:80"
+    environment:
+      API_BASE_URL: ${API_BASE_URL}
     depends_on:
       - api
 

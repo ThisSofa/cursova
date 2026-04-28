@@ -1,5 +1,5 @@
 <?php
-$api_url = "http://api:8000";
+$api_url = getenv('API_BASE_URL') ?: "http://api:8000";
 $message = "";
 $message_type = "success";
 $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'list';
