@@ -181,19 +181,31 @@ if ($get_status >= 200 && $get_status < 300 && $response !== false) {
         $items = $decoded;
     }
 }
+
+// Load categories from API, fall back to defaults
+$default_categories = ['Меблі', 'Навчальні матеріали', 'Техніка та обладнання'];
+[$cat_status, $cat_response] = api_request('GET', $api_url . '/categories/');
+$categories = $default_categories;
+if ($cat_status >= 200 && $cat_status < 300 && $cat_response !== false) {
+    $decoded_cats = json_decode($cat_response, true);
+    if (is_array($decoded_cats) && !empty($decoded_cats)) {
+        $categories = array_values(array_unique(array_merge($default_categories, $decoded_cats)));
+        sort($categories);
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Облік Майна Установи</title>
+    <title>Облік Майна Школи №53</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Система обліку майна установи</h1>
+            <h1>Система обліку майна школи №53</h1>
         </div>
 
         <div class="tabs">
@@ -208,7 +220,7 @@ if ($get_status >= 200 && $get_status < 300 && $response !== false) {
 
             <?php if ($active_tab === 'create'): ?>
                 <h2>Додати новий об'єкт майна</h2>
-                <form method="POST">
+                <form method="POST" id="createForm">
                     <input type="hidden" name="action" value="create">
                     <div class="form-grid">
                         <div>
@@ -217,11 +229,13 @@ if ($get_status >= 200 && $get_status < 300 && $response !== false) {
                         </div>
                         <div>
                             <label for="category">Категорія</label>
-                            <select id="category" name="category" required>
-                                <option value="Основні засоби">Основні засоби</option>
-                                <option value="Оборотні активи">Оборотні активи</option>
-                                <option value="Нематеріальні активи">Нематеріальні активи</option>
+                            <select id="category" name="category" required onchange="toggleNewCategoryInput(this, 'category_new')">
+                                <?php foreach ($categories as $cat): ?>
+                                <option value="<?php echo htmlspecialchars($cat); ?>"><?php echo htmlspecialchars($cat); ?></option>
+                                <?php endforeach; ?>
+                                <option value="__new__">— Нова категорія —</option>
                             </select>
+                            <input type="text" id="category_new" placeholder="Введіть нову категорію" style="display:none; margin-top:6px; width:100%;">
                         </div>
                         <div>
                             <label for="status">Стан</label>
@@ -253,9 +267,9 @@ if ($get_status >= 200 && $get_status < 300 && $response !== false) {
                         <label for="category_filter">Категорія</label>
                         <select id="category_filter" name="category_filter">
                             <option value="">Усі категорії</option>
-                            <option value="Основні засоби" <?php echo $category_filter === 'Основні засоби' ? 'selected' : ''; ?>>Основні засоби</option>
-                            <option value="Оборотні активи" <?php echo $category_filter === 'Оборотні активи' ? 'selected' : ''; ?>>Оборотні активи</option>
-                            <option value="Нематеріальні активи" <?php echo $category_filter === 'Нематеріальні активи' ? 'selected' : ''; ?>>Нематеріальні активи</option>
+                            <?php foreach ($categories as $cat): ?>
+                            <option value="<?php echo htmlspecialchars($cat); ?>" <?php echo $category_filter === $cat ? 'selected' : ''; ?>><?php echo htmlspecialchars($cat); ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div>
@@ -367,11 +381,13 @@ if ($get_status >= 200 && $get_status < 300 && $response !== false) {
                     </div>
                     <div>
                         <label for="edit_category">Категорія</label>
-                        <select id="edit_category" name="category" required>
-                            <option value="Основні засоби">Основні засоби</option>
-                            <option value="Оборотні активи">Оборотні активи</option>
-                            <option value="Нематеріальні активи">Нематеріальні активи</option>
+                        <select id="edit_category" name="category" required onchange="toggleNewCategoryInput(this, 'edit_category_new')">
+                            <?php foreach ($categories as $cat): ?>
+                            <option value="<?php echo htmlspecialchars($cat); ?>"><?php echo htmlspecialchars($cat); ?></option>
+                            <?php endforeach; ?>
+                            <option value="__new__">— Нова категорія —</option>
                         </select>
+                        <input type="text" id="edit_category_new" placeholder="Введіть нову категорію" style="display:none; margin-top:6px; width:100%;">
                     </div>
                     <div>
                         <label for="edit_status">Стан</label>
@@ -412,12 +428,14 @@ if ($get_status >= 200 && $get_status < 300 && $response !== false) {
             <div class="form-grid">
                 <div>
                     <label for="bulk_category">Категорія</label>
-                    <select id="bulk_category">
+                    <select id="bulk_category" onchange="toggleNewCategoryInput(this, 'bulk_category_new')">
                         <option value="">Не змінювати</option>
-                        <option value="Основні засоби">Основні засоби</option>
-                        <option value="Оборотні активи">Оборотні активи</option>
-                        <option value="Нематеріальні активи">Нематеріальні активи</option>
+                        <?php foreach ($categories as $cat): ?>
+                        <option value="<?php echo htmlspecialchars($cat); ?>"><?php echo htmlspecialchars($cat); ?></option>
+                        <?php endforeach; ?>
+                        <option value="__new__">— Нова категорія —</option>
                     </select>
+                    <input type="text" id="bulk_category_new" placeholder="Введіть нову категорію" style="display:none; margin-top:6px; width:100%;">
                 </div>
                 <div>
                     <label for="bulk_status">Стан</label>
@@ -440,6 +458,28 @@ if ($get_status >= 200 && $get_status < 300 && $response !== false) {
             document.getElementById(id).style.display = 'flex';
         }
 
+        function toggleNewCategoryInput(sel, inputId) {
+            var input = document.getElementById(inputId);
+            if (sel.value === '__new__') {
+                input.style.display = '';
+                input.required = true;
+            } else {
+                input.style.display = 'none';
+                input.required = false;
+            }
+        }
+
+        function resolveNewCategory(sel, inputId) {
+            if (sel.value === '__new__') {
+                var val = document.getElementById(inputId).value.trim();
+                if (!val) { return false; }
+                var opt = new Option(val, val, true, true);
+                sel.add(opt, sel.options.length - 1);
+                sel.value = val;
+            }
+            return true;
+        }
+
         function openDeleteModal(button) {
             var id = button.getAttribute('data-id');
             document.getElementById('delete_item_id').value = id;
@@ -449,7 +489,17 @@ if ($get_status >= 200 && $get_status < 300 && $response !== false) {
         function openEditModal(button) {
             document.getElementById('edit_item_id').value = button.getAttribute('data-id');
             document.getElementById('edit_name').value = button.getAttribute('data-name');
-            document.getElementById('edit_category').value = button.getAttribute('data-category');
+            var cat = button.getAttribute('data-category');
+            var sel = document.getElementById('edit_category');
+            var found = false;
+            for (var i = 0; i < sel.options.length; i++) {
+                if (sel.options[i].value === cat) { found = true; break; }
+            }
+            if (!found && cat !== '__new__' && cat !== '') {
+                var opt = new Option(cat, cat);
+                sel.add(opt, sel.options.length - 1);
+            }
+            sel.value = cat;
             document.getElementById('edit_status').value = button.getAttribute('data-status');
             document.getElementById('edit_quantity').value = button.getAttribute('data-quantity');
             document.getElementById('edit_description').value = button.getAttribute('data-description');
@@ -482,7 +532,14 @@ if ($get_status >= 200 && $get_status < 300 && $response !== false) {
         }
 
         function submitBulkUpdate() {
-            document.getElementById('bulkCategoryInput').value = document.getElementById('bulk_category').value;
+            var sel = document.getElementById('bulk_category');
+            if (sel.value === '__new__') {
+                var val = document.getElementById('bulk_category_new').value.trim();
+                if (!val) { alert('Введіть назву нової категорії'); return; }
+                document.getElementById('bulkCategoryInput').value = val;
+            } else {
+                document.getElementById('bulkCategoryInput').value = sel.value;
+            }
             document.getElementById('bulkStatusInput').value = document.getElementById('bulk_status').value;
             document.getElementById('bulkAction').value = 'bulk_update';
             document.getElementById('bulkForm').submit();
@@ -505,6 +562,26 @@ if ($get_status >= 200 && $get_status < 300 && $response !== false) {
                 }
             });
         });
+
+        var createForm = document.getElementById('createForm');
+        if (createForm) {
+            createForm.addEventListener('submit', function (e) {
+                if (!resolveNewCategory(document.getElementById('category'), 'category_new')) {
+                    e.preventDefault();
+                    alert('Введіть назву нової категорії');
+                }
+            });
+        }
+
+        var editForm = document.querySelector('#editModal form');
+        if (editForm) {
+            editForm.addEventListener('submit', function (e) {
+                if (!resolveNewCategory(document.getElementById('edit_category'), 'edit_category_new')) {
+                    e.preventDefault();
+                    alert('Введіть назву нової категорії');
+                }
+            });
+        }
     </script>
 </body>
 </html>
