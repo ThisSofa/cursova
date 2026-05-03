@@ -1,5 +1,17 @@
 <?php
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+error_reporting(E_ALL);
+
 $api_url = rtrim(getenv('API_BASE_URL') ?: "http://api:8000", '/');
+
+$parsed_api = parse_url($api_url);
+if (isset($parsed_api['host']) && $parsed_api['host'] === 'api') {
+    $scheme = $parsed_api['scheme'] ?? 'http';
+    $path = $parsed_api['path'] ?? '';
+    $api_url = rtrim($scheme . '://api:8000' . $path, '/');
+}
+
 $message = "";
 $message_type = "success";
 $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'list';
@@ -23,8 +35,8 @@ function api_request($method, $url, $payload = null) {
 
     $candidate_urls = [$url];
     $parsed_url = parse_url($url);
-    if (isset($parsed_url['host']) && $parsed_url['host'] === 'api' && isset($parsed_url['port']) && (int)$parsed_url['port'] !== 8000) {
-        $fallback_url = $parsed_url['scheme'] . '://' . $parsed_url['host'] . ':8000' . ($parsed_url['path'] ?? '');
+    if (isset($parsed_url['host']) && $parsed_url['host'] === 'api' && (!isset($parsed_url['port']) || (int)$parsed_url['port'] !== 8000)) {
+        $fallback_url = ($parsed_url['scheme'] ?? 'http') . '://' . $parsed_url['host'] . ':8000' . ($parsed_url['path'] ?? '');
         if (isset($parsed_url['query'])) {
             $fallback_url .= '?' . $parsed_url['query'];
         }
