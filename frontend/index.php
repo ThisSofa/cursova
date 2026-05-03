@@ -1,5 +1,5 @@
 <?php
-$api_url = getenv('API_BASE_URL') ?: "http://api:8000";
+$api_url = rtrim(getenv('API_BASE_URL') ?: "http://api:8000", '/');
 $message = "";
 $message_type = "success";
 $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'list';
@@ -18,14 +18,31 @@ function api_request($method, $url, $payload = null) {
         $options['http']['content'] = json_encode($payload);
     }
 
+    $options['http']['timeout'] = 5;
     $context = stream_context_create($options);
-    $response = file_get_contents($url, false, $context);
 
-    $status_line = isset($http_response_header[0]) ? $http_response_header[0] : "HTTP/1.1 500 Internal Server Error";
-    preg_match('/\s(\d{3})\s/', $status_line, $matches);
-    $status_code = isset($matches[1]) ? (int)$matches[1] : 500;
+    $candidate_urls = [$url];
+    $parsed_url = parse_url($url);
+    if (isset($parsed_url['host']) && $parsed_url['host'] === 'api' && isset($parsed_url['port']) && (int)$parsed_url['port'] !== 8000) {
+        $fallback_url = $parsed_url['scheme'] . '://' . $parsed_url['host'] . ':8000' . ($parsed_url['path'] ?? '');
+        if (isset($parsed_url['query'])) {
+            $fallback_url .= '?' . $parsed_url['query'];
+        }
+        $candidate_urls[] = $fallback_url;
+    }
 
-    return [$status_code, $response];
+    foreach ($candidate_urls as $candidate_url) {
+        $response = @file_get_contents($candidate_url, false, $context);
+        $status_line = isset($http_response_header[0]) ? $http_response_header[0] : "HTTP/1.1 503 Service Unavailable";
+        preg_match('/\s(\d{3})\s/', $status_line, $matches);
+        $status_code = isset($matches[1]) ? (int)$matches[1] : 503;
+
+        if ($response !== false) {
+            return [$status_code, $response];
+        }
+    }
+
+    return [503, false];
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
