@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import Column, Integer, String, Text, create_engine
+from sqlalchemy import Column, Integer, String, Text, create_engine, distinct
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 # -- Database Configuration --
@@ -74,6 +74,11 @@ def get_db():
         db.close()
 
 # -- Endpoints --
+@app.get("/categories/", response_model=List[str])
+def get_categories(db: Session = Depends(get_db)):
+    rows = db.query(distinct(Item.category)).order_by(Item.category).all()
+    return [r[0] for r in rows if r[0]]
+
 @app.get("/items/", response_model=List[ItemResponse])
 def read_items(skip: int = 0, limit: int = 100, category: Optional[str] = None, search: Optional[str] = None, db: Session = Depends(get_db)):
     query = db.query(Item)
