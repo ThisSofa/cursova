@@ -7,4 +7,4 @@ CREATE TABLE IF NOT EXISTS items (
     description TEXT NULL,
     INDEX idx_items_name (name),
     INDEX idx_items_category (category)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
